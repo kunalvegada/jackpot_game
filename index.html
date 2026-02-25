@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Casino Slot Machine</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="jackpot_header">
+        <div class="header-content">
+            <div class="jackpot-info">
+                <div class="jackpot-title">💰 JACKPOT CASH 💰</div>
+                <div id="jackpot_display">🤑 ₹11000 🤑</div>
+                <div id="debt_display"></div> 
+            </div>
+            
+            <button onclick="takeCredit()" id="credit_btn" title="Get Credit" disabled>
+                💳
+            </button>
+        </div>
+        <div class="header-footer">💵₹💵</div>
+    </div>
+
+    <div class="game-container">
+        
+        <div class="bet-container">
+            <button class="bet-button" onclick="buyBet(100, 3)">BET 100<br>(3 SPINS)</button>
+            <button class="bet-button" onclick="buyBet(500, 16)">BET 500<br>(16 SPINS)</button>
+            <button class="bet-button" onclick="buyBet(1000, 35)">BET 1000<br>(35 SPINS)</button>
+        </div>
+        
+        <div id="status_msg">Ready to Spin!</div>
+
+        <div class="slots">
+            <div class="reel reel-1"></div>
+            <div class="reel reel-2"></div>
+            <div class="reel reel-3"></div>
+        </div>
+        
+        <div class="multiplier-container" style="margin-bottom: 10px;">
+    <button onclick="setMultiplier(1)" class="mult-btn">1X</button>
+    <button onclick="setMultiplier(3)" class="mult-btn" style="background: #ff00ff;">X3 🔥</button>
+    <button onclick="setMultiplier(5)" class="mult-btn" style="background: #ff0000;">X5 💀</button>
+</div>
+
+        
+        
+        
+        
+        <button id="spin_btn" disabled>BUY SPINS ABOVE</button>
+        
+        
+    <p id="balance">👛 Wallet: ₹1000</p>
+
+    </div>
+
+    <script src="script.js"></script>
+    
+    <div id="instructions_modal" class="modal-overlay">
+    <div class="modal-content">
+        <h2>🎰 How to Play 🎰</h2>
+        <ul style="text-align: left; line-height: 1.6;">
+            <li><strong>Place Bets:</strong> Choose 100, 500, or 1000 to buy spins.</li>
+            <li><strong>Win Tiers:</strong>
+                <br>💰 < 100: 🪙 Coins rain down.
+                <br>💵 100 - 500: 💵 Cash flutter.
+                <br>🎉 > 5000: 🎉💲 Massive Celebration!
+            </li>
+            <li><strong>Credit System 💳:</strong> If your wallet hits ₹0, use the credit icon to get back to ₹1000. Debt is repaid automatically from your wins.</li>
+        </ul>
+        <button onclick="closeInstructions()" class="bet-button">LUCKY START!</button>
+    </div>
+</div>
+
+    
+    
+    
+    
+</body>
+</html>

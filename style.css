@@ -1,0 +1,274 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #333;
+    display: flex;
+    flex-direction: column; 
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    color: white;
+    font-family: sans-serif;
+}
+
+/* Purana pura .reel aur .slots code hata kar ye dalein */
+.reel {width: 80px;
+    height: 80px;
+    background-size: 80px 480px !important;
+    background-repeat: no-repeat;
+    display: inline-block;
+    background-color: white;
+    border: 2px solid red; 
+    margin: 5px;
+    overflow: hidden;
+    
+    /* Change 'center' to 0 for exact pixel alignment */
+    background-position: 0px 0px; 
+    
+    
+    /* Path aur starting position */
+    background-position: center 0px;
+    background-image: url('./img/reel1_.webp');
+}
+
+
+
+
+
+
+
+
+
+
+
+/* Sabka X-position zero rakhein */
+.reel-1, .reel-2, .reel-3 { 
+    background-position-x: 0px; 
+}
+
+
+/* Button Styling */
+button {
+    margin-top: 30px;
+    padding: 12px 30px; 
+    border-radius: 12px; 
+    border: none;
+    background: linear-gradient(#ffcc00, #ff9900); /* Gold look */
+    box-shadow: 0 5px #cc7a00;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #000;
+    text-transform: uppercase;
+    transition: 0.1s;
+}
+
+button:active {
+    box-shadow: 0 2px #cc7a00;
+    transform: translateY(3px);
+}
+
+#balance {
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-top: 20px;
+    color: #00ff00; /* Green color for balance */
+    text-shadow: 1px 1px 2px #000;
+}
+
+
+#credit_btn {
+    transition: all 0.3s ease;
+    background: linear-gradient(145deg, #008CBA, #005f7a);
+    color: white;
+    font-weight: bold;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); box-shadow: 0 0 10px #00ffff; }
+    50% { transform: scale(1.05); box-shadow: 0 0 25px #00ffff; }
+    100% { transform: scale(1); box-shadow: 0 0 10px #00ffff; }
+}
+
+/* Red Flash for Debt Repayment */
+@keyframes flashRed {
+    0% { color: #ff4444; transform: scale(1.2); }
+    100% { color: #00ffff; transform: scale(1); }
+}
+.repay-flash { animation: flashRed 0.8s ease-in-out; }
+
+/* Screen Shake for Big Wins */
+@keyframes shake {
+    0% { transform: translate(1px, 1px); }
+    20% { transform: translate(-3px, 0px); }
+    40% { transform: translate(3px, 2px); }
+    60% { transform: translate(-3px, 1px); }
+    80% { transform: translate(3px, -1px); }
+    100% { transform: translate(0px, 0px); }
+}
+.shake-anim { animation: shake 0.5s; }
+
+#jackpot_header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: #222;
+    z-index: 1000;
+    border-bottom: 2px solid #444;
+    padding: 10px;
+    text-align: center;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.jackpot-info {
+    flex-grow: 1;
+    margin-left: 50px; /* Balances the space taken by the icon on the right */
+}
+
+#credit_btn {
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #555;
+    background: #333;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Animations from previous step go here */
+/* Center the Slot Reels */
+.slots {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 30px 0; /* Creates space above and below reels */
+}
+
+/* Money Particle Styling */
+.money-particle {
+    position: fixed;
+    z-index: 2000;
+    font-size: 1.5rem;
+    pointer-events: none;
+    transition: transform 1s linear, opacity 1s;
+}
+
+/* Flutter animation for cash 💵 */
+@keyframes flutter {
+    0% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(25vh) translateX(20px) rotate(15deg); }
+    50% { transform: translateY(50vh) translateX(-20px) rotate(-15deg); }
+    100% { transform: translateY(80vh) rotate(0deg); opacity: 0; }
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 3000;
+}
+
+.modal-content {
+    background: #222;
+    padding: 25px;
+    border-radius: 20px;
+    border: 2px solid #00ffff;
+    width: 85%;
+    max-width: 350px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 0 20px #00ffff;
+}
+
+#status_msg {
+    text-align: center; /* Centers the text */
+    width: 100%;
+    margin: 15px 0; /* Adds space above and below the message */
+    font-weight: bold;
+    font-size: 1.1rem;
+    min-height: 1.5em; /* Prevents layout jumping when text is empty */
+}
+
+
+/* Update your main.css with these responsive rules */
+
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 2vh 5vw; /* Vertical padding based on height, horizontal on width */
+    box-sizing: border-box;
+}
+
+.bet-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap; /* Allows buttons to wrap on very narrow phones */
+    gap: 2vw;        /* Gap scales with screen width */
+    width: 100%;
+}
+
+.bet-button {
+    flex: 1 1 25%;   /* Auto-grows and shrinks; stays proportional */
+    min-width: 80px; 
+    padding: 12px 5px;
+    font-size: 0.9rem; /* Scales better than fixed pixels */
+}
+
+/* Ensure icons scale down for small screens */
+.reel {
+    width: 25vw;    /* Width is always 1/4 of the screen width */
+    max-width: 100px; /* But don't let it get huge on tablets */
+    aspect-ratio: 1/1; /* Keeps them perfectly square */
+    background-size: contain;
+}
+
+
+#balance {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #00ff00;          /* Matching your green wallet text */
+    margin-top: 20px;
+}
+
+#status_msg, #balance {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    text-align: center;
+    margin: 1.5vh 0;
+}
+
+#balance {
+    font-size: 1.2rem;
+    gap: 8px; /* Space between the 👛 and the text */
+}
+/* Standard mobile adjustment */
+@media (max-width: 360px) {
+    .bet-button {
+        font-size: 0.75rem; /* Shrink text so it doesn't overflow */
+    }
+    #jackpot_display {
+        font-size: 1.5rem;
+    }
+}
