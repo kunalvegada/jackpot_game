@@ -12,17 +12,43 @@ const winSound = new Audio('./media/win.mp3');
 const cashSound = new Audio('./media/cash.mp3'); 
 const spinSound = new Audio('./media/spin.mp3');
 const betSound = new Audio('./media/click.mp3'); 
+const matchSound = new Audio('./media/2_match.mp3');
+const jackpot_winSound = new Audio('./media/jackpot_win.mp3');
+const coinSound = new Audio('./media/50coins.mp3');
 
 // --- GAME STATE ---
 let balance = 1000; 
-let jackpotPool = 1000000; 
+let jackpotPool = 100000; 
 let spinsRemaining = 0;
 let totalDebt = 0; 
 let repaymentPerSpin = 0; 
-let currentMultiplier = 1; // Default is 1x
+let currentMultiplier = 1; 
 
 const iconHeight = 80; 
-const images = ['./img/reel1_.webp', './img/reel2_.webp', './img/reel3_.webp', './img/reel4_.webp', './img/reel5_.webp']; 
+const images = ['./img/reel1_.webp','./img/reel2_.webp','./img/reel3_.webp','./img/reel4_.webp','./img/reel5_.webp']; 
+// ]; ]; ]; ]; 
+
+// --- NEW: NEAR MISS SOUND GENERATOR (Defined Globally) ---
+function playNearMissSound() {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const audioCtx = new AudioContext();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    oscillator.type = 'square'; 
+    oscillator.frequency.setValueAtTime(150, audioCtx.currentTime); 
+    oscillator.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1); 
+
+    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); 
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + 0.3);
+}
 
 // --- UI UPDATER ---
 function updateUI() {
@@ -34,11 +60,15 @@ function updateUI() {
     }
 
     if (balance < 1000 && totalDebt === 0) {
-        creditBtn.disabled = false;
-        creditBtn.classList.add('credit-active');
+        if(creditBtn) {
+            creditBtn.disabled = false;
+            creditBtn.classList.add('credit-active');
+        }
     } else {
-        creditBtn.disabled = true;
-        creditBtn.classList.remove('credit-active');
+        if(creditBtn) {
+            creditBtn.disabled = true;
+            creditBtn.classList.remove('credit-active');
+        }
     }
 
     if (spinsRemaining > 0) {
@@ -89,6 +119,34 @@ window.buyBet = function(amount, spins) {
     }
 };
 
+window.buyMax = function() {
+    let tempBalance = balance;
+    let totalCost = 0;
+    let totalSpins = 0;
+
+    let count1000 = Math.floor(tempBalance / 1000);
+    totalCost += count1000 * 1000;
+    totalSpins += count1000 * 35;
+    tempBalance -= count1000 * 1000;
+
+    let count500 = Math.floor(tempBalance / 500);
+    totalCost += count500 * 500;
+    totalSpins += count500 * 16;
+    tempBalance -= count500 * 500;
+
+    let count100 = Math.floor(tempBalance / 100);
+    totalCost += count100 * 100;
+    totalSpins += count100 * 3;
+
+    if (totalCost >= 100) {
+        if (confirm(`Buy maximum possible: ${totalSpins} spins for ₹${totalCost}?`)) {
+            window.buyBet(totalCost, totalSpins);
+        }
+    } else {
+        window.buyBet(100, 3);
+    }
+};
+
 // --- CREDIT SYSTEM ---
 window.takeCredit = function() {
     if (balance >= 1000 || totalDebt > 0) return;
@@ -103,12 +161,18 @@ window.takeCredit = function() {
     updateUI();
 };
 
-// --- TIERED MONEY FLOW ANIMATION ---
+// --- MONEY FLOW ANIMATION ---
 function flowMoney(amount) {
     let emoji = "🪙";
     let count = 10;
+    
+    
     if (amount >= 5000) { emoji = ["🎉", "💲", "💵", "🪙"]; count = 40; }
-    else if (amount > 500) { emoji = ["💵", "🪙"]; count = 25; }
+    
+    else if (amount > 500) { emoji = ["💵", "🪙"]; count = 25;
+    coinSound.play();}
+    
+    
     else if (amount >= 100) { emoji = "💵"; count = 15; }
 
     for (let i = 0; i < count; i++) {
@@ -129,17 +193,14 @@ function flowMoney(amount) {
 
 // --- SPIN LOGIC ---
 function startSpin() {
-    // 1. Check Multiplier requirements
     if (spinsRemaining < currentMultiplier) {
         alert(`Need at least ${currentMultiplier} spins for X${currentMultiplier} mode!`);
         return;
     }
-
     if (spinSound) { spinSound.currentTime = 0; spinSound.play().catch(() => {}); }
 
-    // 2. Correct Deduction
     spinsRemaining -= currentMultiplier;
-    jackpotPool += (50 * currentMultiplier); 
+    jackpotPool += (500 * currentMultiplier); 
     updateUI();
     
     let results = [];
@@ -171,7 +232,6 @@ function checkWin(res) {
     const isTwo = ((r1.strip === r2.strip && r1.icon === r2.icon) || (r2.strip === r3.strip && r2.icon === r3.icon) || (r1.strip === r3.strip && r1.icon === r3.icon));
 
     if (isJP) {
-        // --- NEW JACKPOT TIERS ---
         let jpPercent = 0.90; 
         if (currentMultiplier === 3) jpPercent = 0.95; 
         if (currentMultiplier === 5) jpPercent = 0.99; 
@@ -180,17 +240,26 @@ function checkWin(res) {
         jackpotPool *= (1 - jpPercent);
         statusMsg.innerHTML = `🎰 🎉 X${currentMultiplier} JACKPOT: ₹${win} 🎉 🎰`;
         statusMsg.style.color = "#ffcc00";
-        if (winSound) winSound.play().catch(() => {});
-    } 
-    else if (isTwo) {
-        // --- MULTIPLIER WIN ---
+        if (jackpot_winSound) jackpot_winSound.play().catch(() => {});
+
+    } else if (isTwo) {
+        playNearMissSound();
         let baseWin = Math.floor((jackpotPool * 0.1 / Math.max(spinsRemaining, 1)) * 2);
         win = baseWin * currentMultiplier; 
-        statusMsg.innerHTML = `💚 X${currentMultiplier} Match: ₹${win} 💚`;
-        statusMsg.style.color = "#00ff00";
-    } 
-    else {
-        // --- LOSS MESSAGES ---
+
+        const gameContainer = document.querySelector('.slot-machine') || document.body;
+        gameContainer.classList.add('near-miss-shake');
+        setTimeout(() => gameContainer.classList.remove('near-miss-shake'), 500);
+
+        statusMsg.innerHTML = `✨ NEAR MISS! X${currentMultiplier} Match: ₹${win} ✨`;
+        statusMsg.style.color = "#FFD700"; 
+        
+        if (matchSound) {
+            matchSound.currentTime = 0;
+            matchSound.play().catch(() => {});
+        }
+
+    } else {
         if (currentMultiplier === 5) {
             win = 0;
             statusMsg.innerHTML = `Bad Luck 🤞 Try harder!<br><small>(₹500 Value Lost)</small>`;
@@ -201,6 +270,7 @@ function checkWin(res) {
             statusMsg.style.color = "#ff9900";
         } else {
             win = 50; 
+            if (coinSound) coinSound.play().catch(() => {});
             statusMsg.innerText = `Won: ₹50`;
             statusMsg.style.color = "#ffffff";
         }
@@ -233,19 +303,20 @@ spinBtn.addEventListener('click', startSpin);
 updateUI();
 
 window.forceJackpot = function() {
+    console.log("🎰 Jackpot Cheat Activated!");
     const originalMathRandom = Math.random;
     Math.random = () => 0; 
     setTimeout(() => { Math.random = originalMathRandom; }, 30000); 
 };
 
 window.closeInstructions = function() {
-    document.getElementById('instructions_modal').style.display = 'none';
+    const modal = document.getElementById('instructions_modal');
+    if (modal) modal.style.display = 'none';
 };
 
 window.onload = () => {
-    if(document.getElementById('instructions_modal')) {
-        document.getElementById('instructions_modal').style.display = 'flex';
-    }
+    const modal = document.getElementById('instructions_modal');
+    if(modal) modal.style.display = 'flex';
 };
 
 /*
