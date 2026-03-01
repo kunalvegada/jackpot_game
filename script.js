@@ -230,23 +230,50 @@ function checkWin(res) {
 
     const isJP = (r1.strip === r2.strip && r2.strip === r3.strip && r1.icon === r2.icon && r2.icon === r3.icon);
     const isTwo = ((r1.strip === r2.strip && r1.icon === r2.icon) || (r2.strip === r3.strip && r2.icon === r3.icon) || (r1.strip === r3.strip && r1.icon === r3.icon));
-
+    
+    // --- 1. JACKPOT LOGIC ---
     if (isJP) {
         let jpPercent = 0.90; 
         if (currentMultiplier === 3) jpPercent = 0.95; 
         if (currentMultiplier === 5) jpPercent = 0.99; 
+        
+        let calculatedWin = Math.floor(jackpotPool * jpPercent);
 
-        win = Math.floor(jackpotPool * jpPercent);
-        jackpotPool *= (1 - jpPercent);
+        // Safety Check: Maintain 5000 floor
+        if ((jackpotPool - calculatedWin) < 5000) {
+            win = Math.max(0, jackpotPool - 5000);
+        } else {
+            win = calculatedWin;
+        }
+        
+        jackpotPool -= win; 
+
         statusMsg.innerHTML = `🎰 🎉 X${currentMultiplier} JACKPOT: ₹${win} 🎉 🎰`;
         statusMsg.style.color = "#ffcc00";
-        if (jackpot_winSound) jackpot_winSound.play().catch(() => {});
+        
+        if (jackpot_winSound) {
+            jackpot_winSound.currentTime = 0;
+            jackpot_winSound.play().catch(() => {});
+        }
+    }
 
-    } else if (isTwo) {
+    // --- 2. NEAR MISS (2 MATCH) LOGIC ---
+    else if (isTwo) {
         playNearMissSound();
-        let baseWin = Math.floor((jackpotPool * 0.1 / Math.max(spinsRemaining, 1)) * 2);
-        win = baseWin * currentMultiplier; 
 
+        // FIXED FORMULA: No longer dividing by spinsRemaining!
+        // We give a fixed 1% of the pool as the base. 
+        let baseWin = Math.floor(jackpotPool * 0.01); 
+        let totalWinAttempt = baseWin * currentMultiplier;
+        
+        // Safety Check: Maintain 5000 floor
+        if ((jackpotPool - totalWinAttempt) < 5000) {
+            win = Math.max(0, jackpotPool - 5000); 
+        } else {
+            win = totalWinAttempt;
+        }
+
+        // Visual Effects
         const gameContainer = document.querySelector('.slot-machine') || document.body;
         gameContainer.classList.add('near-miss-shake');
         setTimeout(() => gameContainer.classList.remove('near-miss-shake'), 500);
@@ -258,8 +285,12 @@ function checkWin(res) {
             matchSound.currentTime = 0;
             matchSound.play().catch(() => {});
         }
-
-    } else {
+        
+        jackpotPool -= win; // Use direct subtraction
+    } 
+    
+    // --- 3. LOSS / CONSOLATION ---
+    else {
         if (currentMultiplier === 5) {
             win = 0;
             statusMsg.innerHTML = `Bad Luck 🤞 Try harder!<br><small>(₹500 Value Lost)</small>`;
@@ -273,9 +304,12 @@ function checkWin(res) {
             if (coinSound) coinSound.play().catch(() => {});
             statusMsg.innerText = `Won: ₹50`;
             statusMsg.style.color = "#ffffff";
+            // Note: We don't deduct the ₹50 win from the jackpot pool 
+            // because it's a "house" payout.
         }
     }
 
+    // --- 4. ANIMATIONS & DEBT ---
     if (win > 0) {
         flowMoney(win);
         if (win >= 5000) {
@@ -297,6 +331,7 @@ function checkWin(res) {
     balance += win;
     updateUI();
 }
+
 
 // --- INITIALIZE & EXTRAS ---
 spinBtn.addEventListener('click', startSpin);
