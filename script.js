@@ -17,16 +17,33 @@ const jackpot_winSound = new Audio('./media/jackpot_win.mp3');
 const coinSound = new Audio('./media/50coins.mp3');
 
 // --- GAME STATE ---
+/* --- OLD CODE ---
 let balance = 1000; 
 let jackpotPool = 100000; 
 let spinsRemaining = 0;
 let totalDebt = 0; 
 let repaymentPerSpin = 0; 
+*/
+
+// --- NEW CODE WITH LOCALSTORAGE PERSISTENCE ---
+let balance = localStorage.getItem('playerWallet') ? parseInt(localStorage.getItem('playerWallet'), 10) : 1000; 
+let jackpotPool = localStorage.getItem('jackpotPool') ? parseFloat(localStorage.getItem('jackpotPool')) : 100000; 
+let spinsRemaining = localStorage.getItem('spinsRemaining') ? parseInt(localStorage.getItem('spinsRemaining'), 10) : 0;
+let totalDebt = localStorage.getItem('playerDebt') ? parseInt(localStorage.getItem('playerDebt'), 10) : 0; 
+let repaymentPerSpin = localStorage.getItem('repaymentPerSpin') ? parseInt(localStorage.getItem('repaymentPerSpin'), 10) : 0; 
 let currentMultiplier = 1; 
 
 const iconHeight = 80; 
 const images = ['./img/reel1_.webp','./img/reel2_.webp','./img/reel3_.webp','./img/reel4_.webp','./img/reel5_.webp']; 
-// ]; ]; ]; ]; 
+
+// --- NEW: SAVE GAME STATE HELPER ---
+function saveGameState() {
+    localStorage.setItem('playerWallet', balance);
+    localStorage.setItem('jackpotPool', jackpotPool);
+    localStorage.setItem('spinsRemaining', spinsRemaining);
+    localStorage.setItem('playerDebt', totalDebt);
+    localStorage.setItem('repaymentPerSpin', repaymentPerSpin);
+}
 
 // --- NEW: NEAR MISS SOUND GENERATOR (Defined Globally) ---
 function playNearMissSound() {
@@ -54,6 +71,9 @@ function playNearMissSound() {
 function updateUI() {
     balanceText.innerText = `👛 Wallet: ₹${Math.floor(balance)}`;
     jackpotText.innerHTML = `🤑 ₹${Math.floor(jackpotPool)} 🤑`;
+    
+    // Save current game state changes to browser storage automatically
+    saveGameState();
     
     if (debtDisplay) {
         debtDisplay.innerText = totalDebt > 0 ? `Debt: ₹${totalDebt}` : "";
@@ -166,13 +186,8 @@ function flowMoney(amount) {
     let emoji = "🪙";
     let count = 10;
     
-    
     if (amount >= 5000) { emoji = ["🎉", "💲", "💵", "🪙"]; count = 40; }
-    
-    else if (amount > 500) { emoji = ["💵", "🪙"]; count = 25;
-    coinSound.play();}
-    
-    
+    else if (amount > 500) { emoji = ["💵", "🪙"]; count = 25; coinSound.play(); }
     else if (amount >= 100) { emoji = "💵"; count = 15; }
 
     for (let i = 0; i < count; i++) {
@@ -239,7 +254,6 @@ function checkWin(res) {
         
         let calculatedWin = Math.floor(jackpotPool * jpPercent);
 
-        // Safety Check: Maintain 5000 floor
         if ((jackpotPool - calculatedWin) < 5000) {
             win = Math.max(0, jackpotPool - 5000);
         } else {
@@ -261,19 +275,15 @@ function checkWin(res) {
     else if (isTwo) {
         playNearMissSound();
 
-        // FIXED FORMULA: No longer dividing by spinsRemaining!
-        // We give a fixed 1% of the pool as the base. 
         let baseWin = Math.floor(jackpotPool * 0.01); 
         let totalWinAttempt = baseWin * currentMultiplier;
         
-        // Safety Check: Maintain 5000 floor
         if ((jackpotPool - totalWinAttempt) < 5000) {
             win = Math.max(0, jackpotPool - 5000); 
         } else {
             win = totalWinAttempt;
         }
 
-        // Visual Effects
         const gameContainer = document.querySelector('.slot-machine') || document.body;
         gameContainer.classList.add('near-miss-shake');
         setTimeout(() => gameContainer.classList.remove('near-miss-shake'), 500);
@@ -286,7 +296,7 @@ function checkWin(res) {
             matchSound.play().catch(() => {});
         }
         
-        jackpotPool -= win; // Use direct subtraction
+        jackpotPool -= win; 
     } 
     
     // --- 3. LOSS / CONSOLATION ---
@@ -304,8 +314,6 @@ function checkWin(res) {
             if (coinSound) coinSound.play().catch(() => {});
             statusMsg.innerText = `Won: ₹50`;
             statusMsg.style.color = "#ffffff";
-            // Note: We don't deduct the ₹50 win from the jackpot pool 
-            // because it's a "house" payout.
         }
     }
 
@@ -332,7 +340,6 @@ function checkWin(res) {
     updateUI();
 }
 
-
 // --- INITIALIZE & EXTRAS ---
 spinBtn.addEventListener('click', startSpin);
 updateUI();
@@ -353,43 +360,3 @@ window.onload = () => {
     const modal = document.getElementById('instructions_modal');
     if(modal) modal.style.display = 'flex';
 };
-
-/*
-
-// --- DEVELOPER TEST TOOL ---
-// Call this in the browser console to win the next spin!
-window.forceJackpot = function() {
-    console.log("🎰 Jackpot Cheat Activated for 30 seconds!");
-    const originalMathRandom = Math.random;
-    
-    // Force every random check to return 0 (top icon on the strip)
-    Math.random = () => 0; 
-    
-    // Automatically reset after 30 seconds so the game returns to normal
-    setTimeout(() => { 
-        Math.random = originalMathRandom; 
-        console.log("🎰 Jackpot Cheat Deactivated.");
-    }, 30000); 
-};
-
-function closeInstructions() {
-    document.getElementById('instructions_modal').style.display = 'none';
-}
-
-// Optional: Open instructions automatically when the game loads
-window.onload = () => {
-    document.getElementById('instructions_modal').style.display = 'flex';
-};
-
-// --- NEW GAME STATE ---
-let currentMultiplier = 1; // Default is 1x
-
-// Function to set multiplier from UI
-window.setMultiplier = function(val) {
-    currentMultiplier = val;
-    statusMsg.innerText = `Multiplier set to X${val}!`;
-    statusMsg.style.color = val > 1 ? "#ff00ff" : "#ffffff";
-};
-
-
-*/
