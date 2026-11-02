@@ -16,16 +16,7 @@ const matchSound = new Audio('./media/2_match.mp3');
 const jackpot_winSound = new Audio('./media/jackpot_win.mp3');
 const coinSound = new Audio('./media/50coins.mp3');
 
-// --- GAME STATE ---
-/* --- OLD CODE ---
-let balance = 1000; 
-let jackpotPool = 100000; 
-let spinsRemaining = 0;
-let totalDebt = 0; 
-let repaymentPerSpin = 0; 
-*/
-
-// --- NEW CODE WITH LOCALSTORAGE PERSISTENCE ---
+// --- GAME STATE WITH LOCALSTORAGE PERSISTENCE ---
 let balance = localStorage.getItem('playerWallet') ? parseInt(localStorage.getItem('playerWallet'), 10) : 1000; 
 let jackpotPool = localStorage.getItem('jackpotPool') ? parseFloat(localStorage.getItem('jackpotPool')) : 100000; 
 let spinsRemaining = localStorage.getItem('spinsRemaining') ? parseInt(localStorage.getItem('spinsRemaining'), 10) : 0;
@@ -36,7 +27,7 @@ let currentMultiplier = 1;
 const iconHeight = 80; 
 const images = ['./img/reel1_.webp','./img/reel2_.webp','./img/reel3_.webp','./img/reel4_.webp','./img/reel5_.webp']; 
 
-// --- NEW: SAVE GAME STATE HELPER ---
+// --- SAVE GAME STATE HELPER ---
 function saveGameState() {
     localStorage.setItem('playerWallet', balance);
     localStorage.setItem('jackpotPool', jackpotPool);
@@ -45,7 +36,7 @@ function saveGameState() {
     localStorage.setItem('repaymentPerSpin', repaymentPerSpin);
 }
 
-// --- NEW: NEAR MISS SOUND GENERATOR (Defined Globally) ---
+// --- NEAR MISS SOUND GENERATOR ---
 function playNearMissSound() {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     if (!AudioContext) return;
@@ -72,7 +63,6 @@ function updateUI() {
     balanceText.innerText = `👛 Wallet: ₹${Math.floor(balance)}`;
     jackpotText.innerHTML = `🤑 ₹${Math.floor(jackpotPool)} 🤑`;
     
-    // Save current game state changes to browser storage automatically
     saveGameState();
     
     if (debtDisplay) {
@@ -167,17 +157,30 @@ window.buyMax = function() {
     }
 };
 
-// --- CREDIT SYSTEM ---
+// --- CREDIT SYSTEM (WITH 1-DAY LIMIT) ---
 window.takeCredit = function() {
     if (balance >= 1000 || totalDebt > 0) return;
+
+    // Check last credit date from localStorage
+    const lastCreditDate = localStorage.getItem('lastCreditDate');
+    const today = new Date().toDateString(); 
+
+    if (lastCreditDate === today) {
+        alert("⚠️ Daily Credit Limit Reached!\nYou have already used your free credit for today. Come back tomorrow or buy spins to continue!");
+        return;
+    }
+
     let loanNeeded = 1000 - balance; 
     totalDebt = loanNeeded;
     repaymentPerSpin = Math.ceil(totalDebt / 5); 
     jackpotPool -= loanNeeded; 
     balance += loanNeeded; 
 
+    // Save today's date so they can't claim it again today
+    localStorage.setItem('lastCreditDate', today);
+
     if (cashSound) cashSound.play().catch(() => {});
-    statusMsg.innerText = `₹${loanNeeded} Credited! Topped up to ₹1000.`;
+    statusMsg.innerText = `₹${loanNeeded} Daily Credit Given! Topped up to ₹1000.`;
     updateUI();
 };
 
