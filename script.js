@@ -17,6 +17,14 @@ const jackpot_winSound = new Audio('./media/jackpot_win.mp3');
 const coinSound = new Audio('./media/50coins.mp3');
 
 // --- GAME STATE WITH LOCALSTORAGE PERSISTENCE ---
+/* --- OLD CODE PRESERVED AS REFERENCE ---
+let balance = 1000; 
+let jackpotPool = 100000; 
+let spinsRemaining = 0;
+let totalDebt = 0; 
+let repaymentPerSpin = 0; 
+*/
+
 let balance = localStorage.getItem('playerWallet') ? parseInt(localStorage.getItem('playerWallet'), 10) : 1000; 
 let jackpotPool = localStorage.getItem('jackpotPool') ? parseFloat(localStorage.getItem('jackpotPool')) : 100000; 
 let spinsRemaining = localStorage.getItem('spinsRemaining') ? parseInt(localStorage.getItem('spinsRemaining'), 10) : 0;
@@ -161,7 +169,6 @@ window.buyMax = function() {
 window.takeCredit = function() {
     if (balance >= 1000 || totalDebt > 0) return;
 
-    // Check last credit date from localStorage
     const lastCreditDate = localStorage.getItem('lastCreditDate');
     const today = new Date().toDateString(); 
 
@@ -176,7 +183,6 @@ window.takeCredit = function() {
     jackpotPool -= loanNeeded; 
     balance += loanNeeded; 
 
-    // Save today's date so they can't claim it again today
     localStorage.setItem('lastCreditDate', today);
 
     if (cashSound) cashSound.play().catch(() => {});
@@ -209,14 +215,17 @@ function flowMoney(amount) {
     }
 }
 
-// --- SPIN LOGIC (WITH SPIN LOCK 🔐) ---
+// --- SPIN LOGIC (STRICTLY LOCKED 🔐) ---
 function startSpin() {
+    // Guard clause to block duplicate triggers if already disabled/spinning
+    if (spinBtn.disabled) return;
+
     if (spinsRemaining < currentMultiplier) {
         alert(`Need at least ${currentMultiplier} spins for X${currentMultiplier} mode!`);
         return;
     }
 
-    // LOCK THE SPIN BUTTON IMMEDIATELY
+    // STRICT LOCK: Disable button immediately and change text/color
     spinBtn.disabled = true;
     spinBtn.style.background = "#555";
     spinBtn.innerText = "SPINNING...";
@@ -225,6 +234,14 @@ function startSpin() {
 
     spinsRemaining -= currentMultiplier;
     jackpotPool += (500 * currentMultiplier); 
+
+    // Save state changes immediately so UI stays synchronized without prematurely unlocking
+    saveGameState();
+    balanceText.innerText = `👛 Wallet: ₹${Math.floor(balance)}`;
+    jackpotText.innerHTML = `🤑 ₹${Math.floor(jackpotPool)} 🤑`;
+    if (debtDisplay) {
+        debtDisplay.innerText = totalDebt > 0 ? `Debt: ₹${totalDebt}` : "";
+    }
     
     let results = [];
     let flashCount = 0;
@@ -346,7 +363,7 @@ function checkWin(res) {
 
     balance += win;
     
-    // updateUI() finishes the round and safely unlocks the button if spins remain
+    // updateUI() concludes the round and safely unlocks the button if spins remain
     updateUI();
 }
 
