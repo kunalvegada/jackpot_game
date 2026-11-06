@@ -209,17 +209,22 @@ function flowMoney(amount) {
     }
 }
 
-// --- SPIN LOGIC ---
+// --- SPIN LOGIC (WITH SPIN LOCK 🔐) ---
 function startSpin() {
     if (spinsRemaining < currentMultiplier) {
         alert(`Need at least ${currentMultiplier} spins for X${currentMultiplier} mode!`);
         return;
     }
+
+    // LOCK THE SPIN BUTTON IMMEDIATELY
+    spinBtn.disabled = true;
+    spinBtn.style.background = "#555";
+    spinBtn.innerText = "SPINNING...";
+
     if (spinSound) { spinSound.currentTime = 0; spinSound.play().catch(() => {}); }
 
     spinsRemaining -= currentMultiplier;
     jackpotPool += (500 * currentMultiplier); 
-    updateUI();
     
     let results = [];
     let flashCount = 0;
@@ -340,6 +345,8 @@ function checkWin(res) {
     }
 
     balance += win;
+    
+    // updateUI() finishes the round and safely unlocks the button if spins remain
     updateUI();
 }
 
